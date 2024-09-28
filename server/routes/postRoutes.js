@@ -1,41 +1,33 @@
-import express from 'express'
-import * as dotenv from 'dotenv'
-import {v2 as cloudinary} from 'cloudinary'
+import express from 'express';
+import Post from '../mongodb/models/post.js';
+import { uploadToCloudinary } from '../utils/cloudinary.js';
 
-import Post from '../mongodb/models/post.js'
-
-dotenv.config()
-
-const router = express.Router()
-
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-})
+const router = express.Router();
 
 // Get all Posts
-router.route('/').get(async(req, res) => {
-    try {
-        const posts = await Post.find({})
+router.route('/').get(async (req, res) => {
+  try {
+    const posts = await Post.find({});
 
-        res.status(200).json({success: true, data: posts})
-    } catch (error) {
-        res.status(500).json({success: false, data: error})
-    }
-})
+    res.status(200).json({ success: true, data: posts });
+  } catch (error) {
+    res.status(500).json({ success: false, data: error });
+  }
+});
 
-
-//Create a Post
+// Create a Post
 router.route('/').post(async (req, res) => {
   try {
     const { name, prompt, photo } = req.body;
-    const photoURL = await cloudinary.uploader.upload(photo); // Upload photo to Cloudinary
 
+    // Await the upload function to get the result
+    const photoURL = await uploadToCloudinary(photo);
+
+    // Create a new post with the photo URL from Cloudinary
     const newPost = await Post.create({
       name,
       prompt,
-      photo: photoURL.url,
+      photo: photoURL.url, 
     });
 
     res.status(201).json({ success: true, data: newPost });
@@ -44,6 +36,4 @@ router.route('/').post(async (req, res) => {
   }
 });
 
-
-
-export default router
+export default router;
